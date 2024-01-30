@@ -1,16 +1,18 @@
 package com.easybank.accounts.service.impl;
 
 import com.easybank.accounts.constants.AccountsConstants;
+import com.easybank.accounts.dto.AccountsDto;
 import com.easybank.accounts.dto.CustomerDto;
 import com.easybank.accounts.entity.Accounts;
 import com.easybank.accounts.entity.Customer;
 import com.easybank.accounts.exception.CustomerAlreadyExistsException;
+import com.easybank.accounts.exception.ResourceNotFoundException;
+import com.easybank.accounts.mapper.AccountsMapper;
 import com.easybank.accounts.mapper.CustomerMapper;
 import com.easybank.accounts.repository.AccountsRepository;
 import com.easybank.accounts.repository.CustomerRepository;
 import com.easybank.accounts.service.IAccountsService;
 import lombok.AllArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -53,5 +55,21 @@ public class AccountsServiceImpl implements IAccountsService {
         newAccounts.setCreatedAt(LocalDateTime.now());
         newAccounts.setCreatedBy("Anonymous");
         return newAccounts;
+    }
+
+    @Override
+    public CustomerDto fetchAccount(String mobileNumber) {
+        Customer customer = customerRepository.findByMobileNumber(mobileNumber).orElseThrow(
+                ()->new ResourceNotFoundException("Customer","mobileNumber", mobileNumber)
+        );
+
+        Accounts accoounts = accountsRepository.findByCustomerId(customer.getCustomerId()).orElseThrow(
+                ()->new ResourceNotFoundException("Customer","mobileNumber", customer.getCustomerId().toString())
+        );
+
+        CustomerDto customerDto = CustomerMapper.mapToCustomerDto(customer, new CustomerDto());
+        customerDto.setAccountsDto(AccountsMapper.mapToAccountsDto(accoounts, new AccountsDto()));
+        return customerDto;
+
     }
 }
